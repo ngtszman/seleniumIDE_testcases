@@ -1,0 +1,114 @@
+Problems/ Issues : 
+-- corner case : 
+   1. start point -1 
+      -1 -> -2 -> -1 -> -2 
+   2. start point 0 
+      0 -> 0 -> 0 
+  Input output format not well-defined 
+
+2^62 = 4,611,686,018,427,387,904
+
+3. If larger than 2^62 and smaller than 2^63
+{
+	"machineId": 6,
+	"messageSequence": 1,
+	"state": -4611686018427387900
+},
+{
+	"machineId": 6,
+	"messageSequence": 0,
+	"state": 4611686018427387905
+}
+The state change to negative from a postive starting point. 
+4. If larger or equal to 2^63 = 9,223,372,036,854,775,808 , returned "Not Found"
+	  
+-- Timeout after 60 seconds ; if I make a POST call, first time is returned HTTP 200 response which means okay. It actually have not make that POST call. However, the API didn't throw error. 
+-- Performance Testing 1 : a i7 10510 16GB RAM Windows laptop , the /create/ will slow down after 20000 machines created, at 4GB RAM. 
+slowed down around 4480708 KB , around 4.3 GB (created around 37000 machines) 
+even change the heap size java -Xms8g HttpCollatz.jar , the actual java memory usage is at around 7,600,000K (Memory usage 99% of the laptop)
+when created around 48000 machines and the machine creation is slowing down. 
+-- Performance Testing 2: a M2 chip 8GB RAM Mac laptop , the /create/  freeze after 37900 machines created, at 2.67GB RAM usage of the Java process.
+ change heap size java -Xms4g HttpCollatz.jar , the java use memory at around 4.60GB , the /create/ slowed down when created 57000 machines.
+ 
+ 
+Security issues: The REST API does not have any authentication or authorization mechanism, which can lead to unauthorized access to sensitive data.
+Lack of error handling: The REST API does not handle errors appropriately, such as invalid inputs or server-side errors.
+Performance issues: The REST API continuously updates the internal state of the machines, which can cause performance issues if there are many machines running simultaneously.
+Lack of documentation: The REST API does not have proper documentation, such as API endpoints, input parameters, output formats, and error codes.
+Lack of traceability : hard to trace as no UTC date timestamp in JSON response. 
+
+
+
+//README: Create a class called collatz in IntelliJ IDE . 
+// After starting up the applicaiton, (on Linux) nohup java -jar httpCollatz.jar > Collatz-$(date+"%Y%m%d-%H%M%S").log 2>&1 &
+// Run the collatz.main in the IDE
+
+import java.net.*;
+import java.io.*;
+
+public class collatz {
+   void create(int N)throws Exception{
+       for (int i = 0 ; i < N ; i++) {
+           // Specify the URL of the REST API endpoint
+           URL url = new URL("http://127.0.0.1:8080/create/" + i + "/3333");
+
+           // Create a connection to the endpoint
+           HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+           connection.setRequestMethod("POST");
+
+           // Send the POST request
+           connection.setDoOutput(true);
+           OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+           writer.write("");
+           writer.flush();
+
+           System.out.printf("Machine ID : %d sent to server\n", i );
+
+           // Print the response from the server
+           BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+           String line;
+           while ((line = reader.readLine()) != null) {
+               System.out.println(line);
+           }
+           reader.close();
+       }
+
+   }
+   void getLastSequence(int machineID) {
+
+       try {
+           // set up the URL connection
+           URL url = new URL("http://127.0.0.1:8080/static/messages/" + machineID);
+           HttpURLConnection con = (HttpURLConnection) url.openConnection();
+           con.setRequestMethod("GET");
+
+           // read the response
+           BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+           String inputLine;
+           StringBuffer content = new StringBuffer();
+           while ((inputLine = in.readLine()) != null) {
+               content.append(inputLine);
+           }
+           in.close();
+           con.disconnect();
+
+           // parse the JSON response
+           //JSONObject jsonResponse = new JSONObject(content.toString());
+
+           // do something with the response
+           System.out.println(content.toString());
+       } catch (Exception e) {
+           e.printStackTrace();
+       }
+
+   }
+    public static void main(String[] args) throws Exception {
+
+        collatz c = new collatz();
+        c.create(100); // for performance testing, start from 40000
+        while (true) {
+            c.getLastSequence(0);
+        }
+    }
+}
+
