@@ -30,7 +30,9 @@ when created around 48000 machines and the machine creation is slowing down.
 -- Performance Testing 2: a M2 chip 8GB RAM Mac laptop , the /create/  freeze after 37900 machines created, at 2.67GB RAM usage of the Java process.
  change heap size java -Xms4g HttpCollatz.jar , the java use memory at around 4.60GB , the /create/ slowed down when created 57000 machines.
  
- 
+-- Performnace issue: using Microsoft Edge to make GET request /static/messages/<id>, timed out when messageSequence to around 1720. Suggest to have additional parameter to GET last n messages.  
+
+
 Security issues: The REST API does not have any authentication or authorization mechanism, which can lead to unauthorized access to sensitive data.
 Lack of error handling: The REST API does not handle errors appropriately, such as invalid inputs or server-side errors.
 Performance issues: The REST API continuously updates the internal state of the machines, which can cause performance issues if there are many machines running simultaneously.
